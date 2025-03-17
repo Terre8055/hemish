@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-grants-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: db-grants
+          image: postgres:latest
+          command:
+            - "sh"
+            - "-c"
+            - "PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME -f /sql/roles.sql"
+          env:
+            - name: DB_HOST
+              value: "my-postgres-postgresql.rds-simulation.svc.cluster.local"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+            - name: DB_NAME
+              value: "postgres"
+          volumeMounts:
+            - name: sql-scripts
+              mountPath: /sql
+      volumes:
+        - name: sql-scripts
+          configMap:
+            name: db-grants-sql
+      restartPolicy: Never

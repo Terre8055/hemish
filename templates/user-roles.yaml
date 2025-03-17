@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: db-init
+        image: postgres:latest
+        command: [ "sh", "-c", "PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME -v app_role_password=$APP_ROLE_PASSWORD -v app_user_password=$APP_USER_PASSWORD -f /sql/roles.sql"]
+        env:
+        - name: DB_HOST
+          value: "my-postgres-postgresql.rds-simulation.svc.cluster.local"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-password
+        - name: DB_NAME
+          value: "postgres"
+        - name: APP_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: APP_USER_PASSWORD
+        volumeMounts:
+        - name: sql-scripts
+          mountPath: /sql
+      volumes:
+      - name: sql-scripts
+        configMap:
+          name: db-init-sql
+      restartPolicy: Never

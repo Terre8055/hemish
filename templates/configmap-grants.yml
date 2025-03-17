@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-grants-sql
+data:
+  roles.sql: |
+    {{ .Values.sqlScripts.grants | nindent 4 }}
